@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
    int i, j, k, ldr, ldt;
    int Testing, seed, numrhs, m, n;
    int endingp, startingp;
-   double norma, norma2; 
+   double norma, norma2, tmp; 
    size_t mloc, offset, local_m;
    MagnitudeType orth, repres, nrmA;
    
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
      R = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(n,n) );
    }
    if (work == Teuchos::null) {
-     work = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(n,1) );
+     work = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(n,2) );
    }  
 
    std::vector<double> dot(n);
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
          printf("m = %3d, n = %3d,  ",m,n);
          printf("|| I - Q'Q || = %3.3e, ", orth);
          printf("|| A - QR || / ||A|| = %3.3e \n", repres/nrmA);
-      }
+      } 
    } else {
       if( my_rank == 0 ) printf("m = %3d, n = %3d\n",m,n);
    }
