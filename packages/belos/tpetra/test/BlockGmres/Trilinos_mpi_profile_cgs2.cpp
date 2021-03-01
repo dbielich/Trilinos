@@ -76,8 +76,13 @@ int main(int argc, char *argv[]) {
    ////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////
 
+   int ntests = 2;
    m = 20000; n = 50; Testing = 0;
    for( i = 1; i < argc; i++ ) {
+      if( strcmp( argv[i], "-ntests" ) == 0 ) {
+         ntests = atoi(argv[i+1]);
+         i++;
+      }
       if( strcmp( argv[i], "-m" ) == 0 ) {
          m = atoi(argv[i+1]);
          i++;
@@ -94,6 +99,7 @@ int main(int argc, char *argv[]) {
 
    numrhs = n;
 
+for (int test = 0; test < ntests; test++) {   
    RCP<const map_type> map = rcp(new map_type (m, indexBase, comm, Tpetra::GloballyDistributed));
    RCP<MV> Q = rcp( new MV(map,numrhs) );
    RCP<MV> A = rcp( new MV(map,numrhs) );
@@ -258,8 +264,12 @@ int main(int argc, char *argv[]) {
 
    } //end timer scope guard (i.e. Stop timing.)
    //Print final timing details:
-   Teuchos::TimeMonitor::summarize( printer_->stream(Belos::TimingDetails) );
-   
+   if (test == 0) {
+     Teuchos::TimeMonitor::summarize( printer_->stream(Belos::TimingDetails) );
+     Teuchos::TimeMonitor::zeroOutTimers ();  
+   } else if (test == ntests-1) {
+     Teuchos::TimeMonitor::summarize( printer_->stream(Belos::TimingDetails) );
+   }
 
    if( Testing ){  
       // Orthogonality Check
@@ -281,11 +291,12 @@ int main(int argc, char *argv[]) {
          printf("|| I - Q'Q || = %3.3e, ", orth);
          printf("|| A - QR || / ||A|| = %3.3e \n", repres/nrmA);
       } 
-   } else {
+   } else if (test == ntests-1) {
       if( my_rank == 0 ) printf("m = %3d, n = %3d\n",m,n);
    }
  
    }
+}
    return 0;
 
 }
