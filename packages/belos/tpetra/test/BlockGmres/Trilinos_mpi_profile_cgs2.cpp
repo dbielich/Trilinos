@@ -179,15 +179,6 @@ for (int test = 0; test < ntests; test++) {
    Teuchos::TimeMonitor slvtimer(*timerIRSolve_);
 #endif
 
-   // Getting starting point and ending point for each process
-   if( my_rank == 0 ){ 
-      startingp = 0; 
-   } else if( my_rank < m - pool_size*mloc  ){ 
-      startingp = ( m - ( pool_size - my_rank ) * mloc + 1 ); 
-   } else { 
-      startingp = ( m - ( pool_size - (my_rank) ) * mloc ); 
-   } endingp = startingp + mloc - 1;  
-
    for( j=0; j<n; j++){
 
       if( j == 0 ){
