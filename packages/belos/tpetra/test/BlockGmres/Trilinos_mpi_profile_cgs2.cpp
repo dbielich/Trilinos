@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
       std::cout << "Total number of processes: " << pool_size << std::endl;
    }
 
-   int i, j, k, ldr, ldt;
+   int i, j;
    int Testing, seed, numrhs, m, n;
-   int endingp, startingp;
-   double norma, norma2, tmp; 
-   size_t mloc, offset, local_m;
-   MagnitudeType orth, repres, nrmA;
+   double tmp; 
+   const double one (1.0);
+   const double zero (0.0);
+   MagnitudeType orth(0.0), repres(0.0), nrmA(0.0);
    
    ////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////
@@ -99,15 +99,12 @@ int main(int argc, char *argv[]) {
 
    numrhs = n;
 
-for (int test = 0; test < ntests; test++) {   
+for (int test = 0; test < ntests; test++) {
    RCP<const map_type> map = rcp(new map_type (m, indexBase, comm, Tpetra::GloballyDistributed));
    RCP<MV> Q = rcp( new MV(map,numrhs) );
    RCP<MV> A = rcp( new MV(map,numrhs) );
 
-   mloc = Q->getLocalLength();
    m = MVT::GetGlobalLength(*Q);
-   const Tpetra::global_size_t numGlobalIndices = m;
-   ldr = n, ldt = n;
    seed = my_rank*m*m; srand(seed);
 
    ////////////////////////////////////////////////////////////////
@@ -195,7 +192,7 @@ for (int test = 0; test < ntests; test++) {
 
 	 } 
          (*R)(0,0) = sqrt( dot[0] );                 
-         MVT::MvScale( *q_j, 1/(*R)(0,0) );
+         MVT::MvScale( *q_j, one/(*R)(0,0) );
          
 
       } else {
@@ -212,14 +209,14 @@ for (int test = 0; test < ntests; test++) {
             Teuchos::TimeMonitor slvtimer(*timerIRSolve2_);
          #endif
 
-         MVT::MvTransMv( (+1.0e+00), *Q_j, *q_j, work1 );        // One AllReduce
+         MVT::MvTransMv( one, *Q_j, *q_j, work1 );        // One AllReduce
 	 }
 	 { //scope guard for timer
          #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor slvtimer(*timerIRSolve3_);
          #endif
 
-         MVT::MvTimesMatAddMv( (-1.0e+00), *Q_j, work1, (+1.0e+00), *q_j );  
+         MVT::MvTimesMatAddMv( -one, *Q_j, work1, one, *q_j );  
 	 }
          for(i=0;i<j;i++) (*R)(i,j) = work1(i,0);
 
@@ -228,14 +225,14 @@ for (int test = 0; test < ntests; test++) {
             Teuchos::TimeMonitor slvtimer(*timerIRSolve2_);
          #endif
 
-         MVT::MvTransMv( (+1.0e+00), *Q_j, *q_j, work1 );        // Two AllReduce
+         MVT::MvTransMv( one, *Q_j, *q_j, work1 );
 	 }
 	 { //scope guard for timer
          #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor slvtimer(*timerIRSolve3_);
          #endif
 
-         MVT::MvTimesMatAddMv( (-1.0e+00), *Q_j, work1, (+1.0e+00), *q_j );  
+         MVT::MvTimesMatAddMv( -one, *Q_j, work1, one, *q_j );  
 	 }
          for(i=0;i<j;i++) (*R)(i,j) += work1(i,0);
 
@@ -247,7 +244,7 @@ for (int test = 0; test < ntests; test++) {
          MVT::MvDot( *q_j, *q_j, dot );                          // Three AllReduce
 	 }
          (*R)(j,j) = sqrt( dot[0] );
-         MVT::MvScale( *q_j, ( 1 / (*R)(j,j) ) );
+         MVT::MvScale( *q_j, ( one / (*R)(j,j) ) );
 
       }
 
@@ -267,13 +264,13 @@ for (int test = 0; test < ntests; test++) {
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > orth_check; 
       orth_check = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(n,n,true) );
       orth_check->putScalar();
-      MVT::MvTransMv( (+1.0e+00), *Q, *Q, *orth_check );
-      for(i=0;i<n;i++){(*orth_check)(i,i) =  1.0e+00 - (*orth_check)(i,i);}
+      MVT::MvTransMv( one, *Q, *Q, *orth_check );
+      for(i=0;i<n;i++){(*orth_check)(i,i) = one - (*orth_check)(i,i);}
       orth = orth_check->normFrobenius();
       // Representativity check
       RCP<MV> repres_check  = rcp( new MV(map,numrhs) );
-      MVT::MvTimesMatAddMv( (1.0e+00), *Q, *R, (0.0e+00), *repres_check );
-      MVT::MvAddMv( (1.0e+00), *A, (-1.0e+00), *repres_check, *Q );
+      MVT::MvTimesMatAddMv( one, *Q, *R, zero, *repres_check );
+      MVT::MvAddMv( one, *A, -one, *repres_check, *Q );
       MVT::MvNorm(*Q,dot,Belos::TwoNorm);
       for(i=0;i<n;i++){ dot[i] = dot[i] * dot[i]; if(i!=0){ dot[0] += dot[i]; } } 
       repres = sqrt(dot[0]); 

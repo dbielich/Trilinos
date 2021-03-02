@@ -301,7 +301,7 @@ for (int test = 0; test < ntests; test++) {
             Teuchos::TimeMonitor slvtimer(*timerIRSolve2_);
          #endif
 
-         MVT::MvTransMv( one, *Q_j, *q_j, work1 ); 
+         MVT::MvTransMv( one, *Q_j, *q_j, work1 );
 	 }
 	 { //scope guard for timer
          #ifdef BELOS_TEUCHOS_TIME_MONITOR
