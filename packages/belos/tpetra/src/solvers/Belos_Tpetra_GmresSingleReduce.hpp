@@ -175,6 +175,7 @@ private:
     int rank = 1;
 
 
+
 // Case for starting the delayed orthogonalization step
 if( n==0 ){
 
