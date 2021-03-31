@@ -240,40 +240,49 @@ if( n>0 ){
     }
 
     // Clean-up for constructing previous q_j-1 and w_j
+
+    // Grabbing the previous orthonormal columns
     Teuchos::Range1D index_update (0, n-1);
+    // Grabbing column to finish first projection
     Teuchos::Range1D index_Wj (n+1, n+1);
+    // Grabbing column to finish second projection + normalization
     Teuchos::Range1D index_qj (n, n);
 
+    // Looking at columns in T(0:n,n:n+1) from previous operations
     Teuchos::RCP< dense_matrix_type > tp
       = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n, 2, 0, n));
-                        
+    // The previous orthonormal columns                    
     Teuchos::RCP< const MV > Qupdate = MVT::CloneView (Q, index_update);
-
+    // Scaling to be able to do the correct orthogonalization
     MV Wj = * (Q.subView (index_Wj));                   
     MVT::MvScale( Wj, ( one / H(n,n-1) ) );
-
+    // Column for finishing second orthogonalization
     MV Qj = * (Q.subView (index_next));
+    // Finish q_j and almost finish w_j
     {
         Teuchos::TimeMonitor LocalTimer (*projTimer);
         MVT::MvTimesMatAddMv( -one, *Qupdate, *tp, one, Qj );
     }
+    // Normalize q_j and it is orthonormal
     MV qj = * (Q.subView (index_qj));
     MVT::MvScale( qj, ( one / H(n,n-1) ) );
                      
+    // Finish applying new orhtonormal column to w_j to finish projection
     MVT::MvAddMv( one, Wj, -T(n,n+1), qj, Wj );
 
-    // Getting the previous column of H correct and setting up a workspace
+    // Getting the previous column of H correct and setting up a workspace in T
     for(int i = 0; i < n; i++ ){
         H(i,n-1) = T(i,n-1) + T(i,n);
         T(i,n-1) = H(i,n-1);
     }
     T(n,n-1) = H(n,n-1);
 
-    // Arnoldi repres trick
+    // Arnoldi repres trick - using the next column in H as a workspace
     dense_matrix_type Hnew (Teuchos::View, H,   n, n-1, 0, 0);
     dense_matrix_type Tcol (Teuchos::View, T,   n,   1, 0, n);
     dense_matrix_type work (Teuchos::View, H,   n,   1, 0, n);
 
+    // This could be a trmv
     Teuchos::BLAS<LO ,SC> blas;
     blas.GEMV ( Teuchos::NO_TRANS, n, n-1, 
               one, Hnew.values(), Hnew.stride(),
